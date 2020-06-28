@@ -1,14 +1,14 @@
 [
 {
-  "modid": "examplemod",
-  "name": "Example Mod",
-  "description": "Example placeholder mod.",
+  "modid": "TCO",
+  "name": "TCO",
+  "description": "A minecraft mod featuring many shooting oriented mini-games",
   "version": "${version}",
   "mcversion": "${mcversion}",
-  "url": "",
+  "url": "https://github.com/TroyNeubauer/TCO/",
   "updateUrl": "",
-  "authorList": ["ExampleDude"],
-  "credits": "The Forge and FML guys, for making this example",
+  "authorList": ["Troy Neubauer"],
+  "credits": "",
   "logoFile": "",
   "screenshots": [],
   "dependencies": []
