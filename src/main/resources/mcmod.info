@@ -1,6 +1,6 @@
 [
 {
-  "modid": "TCO",
+  "modid": "tco",
   "name": "TCO",
   "description": "A minecraft mod featuring many shooting oriented mini-games",
   "version": "${version}",
