@@ -1,7 +1,7 @@
 package com.troy.tco;
 
+import com.troy.tco.entity.EntityHarpoon;
 import com.troy.tco.proxy.IProxy;
-import net.minecraft.init.Blocks;
 import net.minecraftforge.fml.common.*;
 import net.minecraftforge.fml.common.event.*;
 import org.apache.logging.log4j.Logger;
@@ -23,6 +23,6 @@ public class TCO
 	@Mod.EventHandler
 	public void init(FMLInitializationEvent event)
 	{
-		logger.info("DIRT BLOCK >> {}", Blocks.DIRT.getRegistryName());
+
 	}
 }

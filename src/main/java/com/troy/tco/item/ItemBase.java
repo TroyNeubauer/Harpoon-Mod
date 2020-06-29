@@ -1,7 +1,6 @@
 package com.troy.tco.item;
 
 import com.troy.tco.Constants;
-import com.troy.tco.TCO;
 import net.minecraft.item.Item;
 
 public class ItemBase extends Item {

@@ -11,9 +11,9 @@ public class Entities {
 
 	public static final EntityEntry MISSILE = EntityEntryBuilder.create()
 			.entity(EntityHarpoon.class)
-			.id(new ResourceLocation(Constants.MODID, "missile"), ID++)
+			.id(new ResourceLocation(Constants.MODID, "flying_harpoon"), ID++)
 			.name("harpoon")
-			.tracker(128, 5, false)
+			.tracker(256, 1, true)
 			.build();
 
 	public static final EntityEntry[] ALL = { MISSILE };

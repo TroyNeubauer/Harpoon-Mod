@@ -1,6 +1,6 @@
 {
   "parent": "item/handheld",
   "textures": {
-	"layer0": "tco:items/harpoon_gun"
+	"layer0": "minecraft:items/stick"
   }
 }

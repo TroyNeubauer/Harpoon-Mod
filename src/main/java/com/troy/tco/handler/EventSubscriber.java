@@ -5,10 +5,12 @@ import com.troy.tco.TCO;
 import com.troy.tco.entity.Entities;
 import com.troy.tco.entity.EntityHarpoon;
 import com.troy.tco.init.Items;
-import net.minecraft.init.Blocks;
+import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
+import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.ProjectileImpactEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -53,4 +55,5 @@ public class EventSubscriber
 			event.setCanceled(true);
 		}
 	}
+
 }

@@ -2,29 +2,23 @@ package com.troy.tco.item;
 
 import com.troy.tco.TCO;
 import com.troy.tco.entity.EntityHarpoon;
+import com.troy.tco.init.Items;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.enchantment.EnchantmentHelper;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.init.Enchantments;
-import net.minecraft.init.Items;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.*;
-import net.minecraft.stats.StatList;
 import net.minecraft.util.*;
-import net.minecraft.util.math.Vec2f;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
 
-public class HarpoonGun extends ItemBase {
+public class ItemHarpoonGun extends ItemBase {
 	//private EntityHarpoon projectile = null;
 
-	public HarpoonGun()
+	public ItemHarpoonGun()
 	{
 		super("harpoon_gun");
 		setMaxDamage(100);
@@ -58,21 +52,21 @@ public class HarpoonGun extends ItemBase {
 
 	protected ItemStack findAmmo(EntityPlayer player)
 	{
-		if (this.isArrow(player.getHeldItem(EnumHand.OFF_HAND)))
+		if (this.isHarpoon(player.getHeldItem(EnumHand.OFF_HAND)))
 		{
 			return player.getHeldItem(EnumHand.OFF_HAND);
 		}
-		else if (this.isArrow(player.getHeldItem(EnumHand.MAIN_HAND)))
+		else if (this.isHarpoon(player.getHeldItem(EnumHand.MAIN_HAND)))
 		{
 			return player.getHeldItem(EnumHand.MAIN_HAND);
 		}
 		else
 		{
-			for (int i = 0; i < player.inventory.getSizeInventory(); ++i)
+			for (int i = 0; i < player.inventory.getSizeInventory(); i++)
 			{
 				ItemStack itemstack = player.inventory.getStackInSlot(i);
 
-				if (this.isArrow(itemstack))
+				if (this.isHarpoon(itemstack))
 				{
 					return itemstack;
 				}
@@ -82,9 +76,9 @@ public class HarpoonGun extends ItemBase {
 		}
 	}
 
-	protected boolean isArrow(ItemStack stack)
+	protected boolean isHarpoon(ItemStack stack)
 	{
-		return stack.getItem() instanceof ItemArrow;
+		return stack.getItem() instanceof ItemHarpoon;
 	}
 
 	public void onPlayerStoppedUsing(ItemStack stack, World world, EntityLivingBase entityLiving, int timeLeft)
@@ -104,7 +98,7 @@ public class HarpoonGun extends ItemBase {
 
 				if (!world.isRemote)
 				{
-					ItemArrow itemarrow = (ItemArrow) (itemstack.getItem() instanceof ItemArrow ? itemstack.getItem() : Items.ARROW);
+					ItemHarpoon harpoon = (ItemHarpoon) (itemstack.getItem() instanceof ItemHarpoon ? itemstack.getItem() : Items.HARPOON);
 					EntityHarpoon projectile = new EntityHarpoon(world, player);
 					projectile.shoot(player, player.rotationPitch, player.rotationYaw, 0.0f, vel, 0.0f);
 
@@ -112,7 +106,7 @@ public class HarpoonGun extends ItemBase {
 					world.spawnEntity(projectile);
 				}
 
-				world.playSound((EntityPlayer) null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.PLAYERS, 1.0f, 1.0f / (itemRand.nextFloat() * 0.4f + 2.0f) + 1.0f);
+				world.playSound((EntityPlayer) null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.75f, 1.0f / (itemRand.nextFloat() * 0.4f + 2.0f) + 1.0f);
 
 				if (!player.capabilities.isCreativeMode)
 				{
