@@ -1,9 +1,8 @@
 package com.troy.tco.item;
 
 import com.troy.tco.Constants;
+import com.troy.tco.TCO;
 import net.minecraft.item.Item;
-import net.minecraftforge.fml.relauncher.Side;
-import net.minecraftforge.fml.relauncher.SideOnly;
 
 public class ItemBase extends Item {
 

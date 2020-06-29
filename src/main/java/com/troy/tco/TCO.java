@@ -1,5 +1,6 @@
 package com.troy.tco;
 
+import com.troy.tco.proxy.IProxy;
 import net.minecraft.init.Blocks;
 import net.minecraftforge.fml.common.*;
 import net.minecraftforge.fml.common.event.*;
@@ -9,6 +10,9 @@ import org.apache.logging.log4j.Logger;
 public class TCO
 {
 	public static Logger logger;
+
+	@SidedProxy(clientSide = "com.troy.tco.proxy.ClientProxy", serverSide = "com.troy.tco.proxy.ServerProxy")
+	public static IProxy proxy;
 
 	@Mod.EventHandler
 	public void preInit(FMLPreInitializationEvent event)

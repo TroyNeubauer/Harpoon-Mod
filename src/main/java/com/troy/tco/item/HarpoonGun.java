@@ -30,6 +30,7 @@ public class HarpoonGun extends ItemBase {
 		setMaxDamage(100);
 		setMaxStackSize(1);
 		setCreativeTab(CreativeTabs.COMBAT);
+
 		this.addPropertyOverride(new ResourceLocation("pull"), new IItemPropertyGetter()
 		{
 			@SideOnly(Side.CLIENT)
@@ -106,9 +107,7 @@ public class HarpoonGun extends ItemBase {
 					ItemArrow itemarrow = (ItemArrow) (itemstack.getItem() instanceof ItemArrow ? itemstack.getItem() : Items.ARROW);
 					EntityHarpoon projectile = new EntityHarpoon(world, player);
 					projectile.shoot(player, player.rotationPitch, player.rotationYaw, 0.0f, vel, 0.0f);
-					boolean isCritical = Math.random() > 0.5;
-					TCO.logger.info("CRIT: " + isCritical);
-					projectile.setIsCritical(isCritical);
+
 					stack.damageItem(1, player);
 					world.spawnEntity(projectile);
 				}
