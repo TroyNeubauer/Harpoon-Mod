@@ -1,6 +1,7 @@
 package com.troy.tco.entity;
 
 import com.troy.tco.Constants;
+import com.troy.tco.TCO;
 import net.minecraft.client.model.ModelBase;
 import net.minecraft.client.model.ModelRenderer;
 import net.minecraft.client.renderer.entity.Render;
@@ -43,6 +44,7 @@ public class EntiryHarpoonRenderer implements IRenderFactory<EntityFlyingHarpoon
 			@Override
 			public void doRender(EntityFlyingHarpoon entity, double x, double y, double z, float entityYaw, float partialTicks) {
 				bindTexture(texture);
+				TCO.logger.info("Rendering...");
 				modelEmpty.render(entity, 0.0f, 0.0f, 0.0f, entityYaw, 0.0f, 1.0f);
 			}
 		};
