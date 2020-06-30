@@ -1,7 +1,7 @@
 package com.troy.tco.item;
 
 import com.troy.tco.TCO;
-import com.troy.tco.entity.EntityHarpoon;
+import com.troy.tco.entity.EntityFlyingHarpoon;
 import com.troy.tco.init.Items;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.EntityLivingBase;
@@ -99,7 +99,7 @@ public class ItemHarpoonGun extends ItemBase {
 				if (!world.isRemote)
 				{
 					ItemHarpoon harpoon = (ItemHarpoon) (itemstack.getItem() instanceof ItemHarpoon ? itemstack.getItem() : Items.HARPOON);
-					EntityHarpoon projectile = new EntityHarpoon(world, player);
+					EntityFlyingHarpoon projectile = new EntityFlyingHarpoon(world, player);
 					projectile.shoot(player, player.rotationPitch, player.rotationYaw, 0.0f, vel, 0.0f);
 
 					stack.damageItem(1, player);

@@ -12,7 +12,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class EntiryHarpoonRenderer implements IRenderFactory<EntityHarpoon>
+public class EntiryHarpoonRenderer implements IRenderFactory<EntityFlyingHarpoon>
 {
 	private static final ResourceLocation texture = new ResourceLocation(Constants.MODID, "entity/harpoon.png");
 
@@ -33,15 +33,15 @@ public class EntiryHarpoonRenderer implements IRenderFactory<EntityHarpoon>
 	private ModelBase modelEmpty =new Model();
 
 	@Override
-	public Render<EntityHarpoon> createRenderFor(RenderManager manager) {
-		return new Render<EntityHarpoon>(manager) {
+	public Render<EntityFlyingHarpoon> createRenderFor(RenderManager manager) {
+		return new Render<EntityFlyingHarpoon>(manager) {
 			@Override
-			protected ResourceLocation getEntityTexture(EntityHarpoon entity) {
+			protected ResourceLocation getEntityTexture(EntityFlyingHarpoon entity) {
 				return texture;
 			}
 
 			@Override
-			public void doRender(EntityHarpoon entity, double x, double y, double z, float entityYaw, float partialTicks) {
+			public void doRender(EntityFlyingHarpoon entity, double x, double y, double z, float entityYaw, float partialTicks) {
 				bindTexture(texture);
 				modelEmpty.render(entity, 0.0f, 0.0f, 0.0f, entityYaw, 0.0f, 1.0f);
 			}

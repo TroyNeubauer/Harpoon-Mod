@@ -1,6 +1,5 @@
 package com.troy.tco;
 
-import com.troy.tco.entity.EntityHarpoon;
 import com.troy.tco.proxy.IProxy;
 import net.minecraftforge.fml.common.*;
 import net.minecraftforge.fml.common.event.*;

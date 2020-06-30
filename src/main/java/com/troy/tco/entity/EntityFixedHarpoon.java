@@ -2,58 +2,55 @@ package com.troy.tco.entity;
 
 import com.troy.tco.TCO;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.entity.EntityLivingBase;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.item.EntityBoat;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityThrowable;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.SoundCategory;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-public class EntityHarpoon extends EntityThrowable implements IEntityAdditionalSpawnData {
+public class EntityFixedHarpoon extends Entity /*implements IEntityAdditionalSpawnData*/ {
+
+	private final static BlockPos NO_START_POS = new BlockPos(-1, -1, -1);
 
 	private EntityPlayer shooter;
+	private BlockPos startPos = NO_START_POS;
 
-	public EntityHarpoon(World worldIn, double x, double y, double z) {
-		super(worldIn, x, y, z);
-		this.onUpdate();
+	public EntityFixedHarpoon(World worldIn, double x, double y, double z) {
+		super(worldIn);
+		setPosition(x, y, z);
 	}
 
-	public EntityHarpoon(World worldIn, EntityPlayer shooter) {
+	public EntityFixedHarpoon(World worldIn, EntityPlayer shooter) {
 		this(worldIn, shooter.posX, shooter.posY + shooter.getEyeHeight() - 0.2, shooter.posZ);
 		this.shooter = shooter;
 	}
 
 
-	public EntityHarpoon(World worldIn) {
+	public EntityFixedHarpoon(World worldIn) {
 		super(worldIn);
 		this.onUpdate();
 	}
 
-	@Override
-	protected void onImpact(RayTraceResult result) {
-		if (result.typeOfHit != RayTraceResult.Type.BLOCK)
-		{
-			throw new RuntimeException("Expected only block impacts for EntityHarpoon. Event bus handlers not registered properly?");
-		}
-		if (getEntityWorld().isRemote)
-		{
-			float pitch = ThreadLocalRandom.current().nextInt(100, 300) / 10000.0f;
-			world.playSound((EntityPlayer) null, posX, posY, posZ, SoundEvents.ENTITY_ARROW_HIT_PLAYER, SoundCategory.PLAYERS, 1.0f, pitch);
-			TCO.logger.info("Using pitch " + pitch);
-			if (shooter != null)
-			{
-				world.playSound((EntityPlayer) shooter, shooter.posX, shooter.posY, shooter.posZ, SoundEvents.ENTITY_ARROW_HIT_PLAYER, SoundCategory.PLAYERS, 1.0f, pitch);
-			}
-		}
-		setDead();
+	//Returns true if this is anchored from both ends (the player has right clicked a block after the harpoon was shot)
+	public boolean isFixed()
+	{
+		return !startPos.equals(NO_START_POS);
 	}
 
+	@Override
+	protected void entityInit() {
+
+	}
+/*
 	@Override
 	public void writeSpawnData(ByteBuf buffer) {
 		if (shooter != null)
@@ -72,29 +69,36 @@ public class EntityHarpoon extends EntityThrowable implements IEntityAdditionalS
 		UUID uuid = new UUID(upper, lower);
 		TCO.logger.info("Read uuid: " + uuid);
 		this.shooter = getEntityWorld().getPlayerEntityByUUID(uuid);
+		if (shooter == null)
+		{
+			TCO.logger.info("Fixed harpoon failed to find shooter! failing!");
+			setDead();
+		}
 	}
-
+*/
 
 	@Override
-	public void readFromNBT(NBTTagCompound compound) {
-		super.readFromNBT(compound);
+	protected void readEntityFromNBT(NBTTagCompound compound) {
 		UUID uuid = compound.getUniqueId("Shooter");
-		TCO.logger.info("Read shooter UUID: " + uuid);
+		TCO.logger.info("Fixed e: Read shooter UUID: " + uuid);
 		shooter = getEntityWorld().getPlayerEntityByUUID(uuid);
 		if (shooter == null)
 		{
-			TCO.logger.info("Failed to load harpoon shooter from UUID");
+			TCO.logger.info("Failed to load fixed harpoon shooter from UUID");
 			String username = compound.getString("ShooterName");
 			shooter = getEntityWorld().getPlayerEntityByName(username);
 		}
+		int x = compound.getInteger("StartX");
+		int y = compound.getInteger("StartY");
+		int z = compound.getInteger("StartZ");
+		startPos = new BlockPos(x, y, z);
 	}
 
 	@Override
-	public NBTTagCompound writeToNBT(NBTTagCompound compound) {
-		super.writeToNBT(compound);
+	protected void writeEntityToNBT(NBTTagCompound compound) {
 		if (shooter != null)
 		{
-			TCO.logger.info("saving harpoon cap! Shooter: " + shooter.toString());
+			TCO.logger.info("saving fixed harpoon cap! Shooter: " + shooter.toString());
 			compound.setUniqueId("Shooter", shooter.getUniqueID());
 			compound.setString("ShooterName", shooter.getName());
 		}
@@ -102,6 +106,9 @@ public class EntityHarpoon extends EntityThrowable implements IEntityAdditionalS
 		{
 			TCO.logger.info("refusing to save null shooter");
 		}
-		return compound;
+		compound.setInteger("StartX", startPos.getX());
+		compound.setInteger("StartY", startPos.getY());
+		compound.setInteger("StartZ", startPos.getZ());
 	}
+
 }
