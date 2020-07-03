@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.RenderHelper;
 import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.culling.ICamera;
 import net.minecraft.client.renderer.entity.Render;
 import net.minecraft.client.renderer.entity.RenderManager;
 import net.minecraft.client.renderer.entity.RenderPlayer;
@@ -37,7 +38,7 @@ public class EntiryHarpoonRenderer implements IRenderFactory<EntityHarpoon>
 		public HarpoonModel()
 		{
 			testCube = new ModelRenderer(this);
-			testCube.addBox(0.25f, 0.25f, 0.25f, 1, 1, 1);
+			testCube.addBox(-0.5f, -0.5f, -0.5f, 1, 1, 1);
 			testCube.setRotationPoint(0, 0, 0);
 		}
 
@@ -137,7 +138,7 @@ public class EntiryHarpoonRenderer implements IRenderFactory<EntityHarpoon>
 				bufferbuilder.pos(boundingBox.maxX, boundingBox.maxY, boundingBox.maxZ).normal(0.0F, 0.0F, -1.0F).endVertex();
 				bufferbuilder.pos(boundingBox.minX, boundingBox.minY, boundingBox.minZ).normal(0.0F, 0.0F, -1.0F).endVertex();
 				bufferbuilder.pos(entity.getAnchorPos().x, entity.getAnchorPos().y, entity.getAnchorPos().z).normal(0.0F, 0.0F, -1.0F).endVertex();
-
+				//logger.info("Anchor pos is " + entity.getAnchorPos());
 				tessellator.draw();
 				bufferbuilder.setTranslation(0.0D, 0.0D, 0.0D);
 				GlStateManager.enableCull();
@@ -145,6 +146,12 @@ public class EntiryHarpoonRenderer implements IRenderFactory<EntityHarpoon>
 
 				GlStateManager.popMatrix();
 
+			}
+
+			int frames = 0;
+			@Override
+			public boolean shouldRender(EntityHarpoon harpoon, ICamera camera, double camX, double camY, double camZ) {
+				return harpoon.isInRangeToRender3d(camX, camY, camZ) && camera.isBoundingBoxInFrustum(harpoon.getTotalBB().grow(20));
 			}
 		};
 	}

@@ -2,20 +2,27 @@ package com.troy.tco.item;
 
 import com.troy.tco.TCO;
 import com.troy.tco.entity.EntityHarpoon;
+import net.minecraft.block.Block;
+import net.minecraft.client.renderer.Vector3d;
 import net.minecraft.creativetab.CreativeTabs;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.init.Blocks;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.*;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.text.TextComponentString;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 import javax.annotation.Nullable;
+
+import static com.troy.tco.TCO.logger;
 
 public class ItemHarpoonGun extends ItemBase {
 	//private EntityHarpoon projectile = null;
@@ -89,6 +96,7 @@ public class ItemHarpoonGun extends ItemBase {
 		ItemStackData data = getItemStackData(stack);
 		if (chargeTime > 10 && entityLiving instanceof EntityPlayer && data != null)
 		{
+			logger.info("Read data: " + data.block.toString() + " - " + world.getBlockState(data.block).getBlock().getLocalizedName() + " pos " + data.pos);
 			EntityPlayer player = (EntityPlayer)entityLiving;
 
 			float vel = 5.0f;
@@ -96,7 +104,7 @@ public class ItemHarpoonGun extends ItemBase {
 
 			if (!world.isRemote)
 			{
-				EntityHarpoon projectile = new EntityHarpoon(world, player, new Vec3d(data.x, data.y, data.z));
+				EntityHarpoon projectile = new EntityHarpoon(world, player, data.pos, data.block);
 				projectile.shoot(player, player.rotationPitch, player.rotationYaw, 0.0f, vel, 0.0f);
 
 				stack.damageItem(1, player);
@@ -140,12 +148,17 @@ public class ItemHarpoonGun extends ItemBase {
 	}
 
 	@Override
-	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos pos, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ)
+	public EnumActionResult onItemUse(EntityPlayer player, World world, BlockPos block, EnumHand hand, EnumFacing facing, float hitX, float hitY, float hitZ)
 	{
 		ItemStack stack = player.getHeldItem(hand);
 		if (getItemStackData(stack) != null)
 		{
-			//player.sendMessage(new TextComponentString("[TCO]: You have already selected the source block. Shoot the harpoon now"));
+			trySendMessage(player, "You must select an achor point for the harpoon before shooting it!", 1);
+			return EnumActionResult.FAIL;
+		}
+		if (!canAnchorToBlock(block, player))
+		{
+			trySendMessage(player, world.getBlockState(block).getBlock().getLocalizedName() + "Is too weak to be the base for a harpoon zipline. Try a harder block", 2);
 			return EnumActionResult.FAIL;
 		}
 		else
@@ -161,10 +174,23 @@ public class ItemHarpoonGun extends ItemBase {
 					player.inventory.deleteStack(ammo);
 				}
 			}
-			ItemStackData data = new ItemStackData(hitX + pos.getX(), hitY + pos.getY(), hitZ + pos.getZ());
+			ItemStackData data = new ItemStackData(new Vec3d(hitX + block.getX(), hitY + block.getY(), hitZ + block.getZ()), block);
+			logger.info("Anchor set to block " + block.toString() + " - " + world.getBlockState(block).getBlock().getLocalizedName() + " pos " + data.pos);
 			world.playSound((EntityPlayer) null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_LEASHKNOT_PLACE, SoundCategory.PLAYERS, 0.75f, 1.0f);
 			setItemStackData(stack, data);
 			return EnumActionResult.PASS;
+		}
+	}
+
+	private long lastMessageTime = 0;
+	private int lastMessageKind = -1;
+	private void trySendMessage(EntityPlayer player, String message, int kind)
+	{
+		if (kind != lastMessageKind || System.currentTimeMillis() - lastMessageTime > 1000)
+		{
+			lastMessageTime = System.currentTimeMillis();
+			lastMessageKind = kind;
+			player.sendMessage(new TextComponentString("[TCO]: " + message));
 		}
 	}
 
@@ -176,16 +202,17 @@ public class ItemHarpoonGun extends ItemBase {
 	//Stores where the non-harpoon end of the line is attached to
 	static class ItemStackData
 	{
-		public double x, y, z;
+		public Vec3d pos;
+		public BlockPos block;
 
-		public ItemStackData(double x, double y, double z) {
-			this.x = x;
-			this.y = y;
-			this.z = z;
+		public ItemStackData(Vec3d pos, BlockPos block) {
+			this.pos = pos;
+			this.block = block;
 		}
 	}
 
 	private static final String START_X = "StartX", START_Y = "StartY", START_Z = "StartZ";
+	private static final String BLOCK_X = "BlockX", BLOCK_Y = "BlockY", BLOCK_Z = "BlockZ";
 
 	private static void removeItemStackData(ItemStack stack)
 	{
@@ -195,8 +222,12 @@ public class ItemHarpoonGun extends ItemBase {
 			nbt.removeTag(START_X);
 			nbt.removeTag(START_Y);
 			nbt.removeTag(START_Z);
+			nbt.removeTag(BLOCK_X);
+			nbt.removeTag(BLOCK_Y);
+			nbt.removeTag(BLOCK_Z);
 		}
 	}
+
 	private static void setItemStackData(ItemStack stack, ItemStackData data)
 	{
 		NBTTagCompound nbt;
@@ -208,9 +239,13 @@ public class ItemHarpoonGun extends ItemBase {
 		{
 			nbt = new NBTTagCompound();
 		}
-		nbt.setDouble(START_X, data.x);
-		nbt.setDouble(START_Y, data.y);
-		nbt.setDouble(START_Z, data.z);
+		nbt.setDouble(START_X, data.pos.x);
+		nbt.setDouble(START_Y, data.pos.y);
+		nbt.setDouble(START_Z, data.pos.z);
+		nbt.setInteger(BLOCK_X, data.block.getX());
+		nbt.setInteger(BLOCK_Y, data.block.getY());
+		nbt.setInteger(BLOCK_Z, data.block.getZ());
+		logger.info("Set nbt data to: " + nbt.toString());
 		stack.setTagCompound(nbt);
 
 	}
@@ -221,14 +256,20 @@ public class ItemHarpoonGun extends ItemBase {
 		{
 			NBTTagCompound nbt = stack.getTagCompound();
 
-			if (nbt.hasKey(START_X) && nbt.hasKey(START_Y) && nbt.hasKey(START_Z)) {
-				double x = nbt.getDouble(START_X);
-				double y = nbt.getDouble(START_Y);
-				double z = nbt.getDouble(START_Z);
-				return new ItemStackData(x, y, z);
+			if (nbt.hasKey(START_X) && nbt.hasKey(START_Y) && nbt.hasKey(START_Z) && nbt.hasKey(BLOCK_X) && nbt.hasKey(BLOCK_Y) && nbt.hasKey(BLOCK_Z))
+			{
+				ItemStackData result = new ItemStackData(new Vec3d(nbt.getDouble(START_X), nbt.getDouble(START_Y), nbt.getDouble(START_Z)), new BlockPos(nbt.getInteger(BLOCK_X), nbt.getInteger(BLOCK_Y), nbt.getInteger(BLOCK_Z)));
+				logger.info("Reading nbt data: " + result.pos);
+				return result;
 			}
 		}
 		return null;
 	}
+
+	public static boolean canAnchorToBlock(BlockPos pos, Entity entity)
+	{
+		return EntityHarpoon.getBlockBlastResistance(pos, entity) >= 0.5f;
+	}
+
 
 }

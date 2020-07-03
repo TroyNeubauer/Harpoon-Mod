@@ -1,6 +1,7 @@
-package com.troy.tco.entity;
+package com.troy.tco.init;
 
 import com.troy.tco.Constants;
+import com.troy.tco.entity.EntityHarpoon;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.common.registry.EntityEntryBuilder;

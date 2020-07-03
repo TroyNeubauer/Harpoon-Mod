@@ -2,6 +2,8 @@ package com.troy.tco.entity;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.troy.tco.init.Items;
+import com.troy.tco.item.ItemHarpoon;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -10,14 +12,14 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.IProjectile;
 import net.minecraft.entity.MoverType;
+import net.minecraft.entity.item.EntityItem;
 import net.minecraft.entity.monster.EntityEnderman;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.projectile.EntityArrow;
-import net.minecraft.init.SoundEvents;
+import net.minecraft.init.Blocks;
 import net.minecraft.item.ItemLead;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.ItemTool;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
@@ -51,9 +53,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 
 	private static final DataParameter<Byte> CRITICAL = EntityDataManager.<Byte>createKey(EntityArrow.class, DataSerializers.BYTE);
 	private float health;
-	private int xTile;
-	private int yTile;
-	private int zTile;
+	private BlockPos tile, anchorBlock;
 	private Block inTile;
 	protected boolean inGround;
 	protected int timeInGround;
@@ -65,11 +65,10 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 	public EntityHarpoon(World worldIn)
 	{
 		super(worldIn);
-		this.xTile = -1;
-		this.yTile = -1;
-		this.zTile = -1;
+		this.tile = new BlockPos(-1, -1, -1);
+		this.anchorBlock = new BlockPos(-1, -1, -1);
 		this.health = 1.5f;
-		this.setSize(0.5F, 0.5F);
+		setSize(0.5f, 0.5f);
 	}
 
 	public EntityHarpoon(World worldIn, double x, double y, double z)
@@ -78,11 +77,12 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		this.setPosition(x, y, z);
 	}
 
-	public EntityHarpoon(World worldIn, EntityLivingBase shooter, Vec3d anchorPos)
+	public EntityHarpoon(World worldIn, EntityLivingBase shooter, Vec3d anchorPos, BlockPos anchorBlock)
 	{
 		this(worldIn, shooter.posX, shooter.posY + (double) shooter.getEyeHeight() - 0.1, shooter.posZ);
 		this.anchorPos = anchorPos;
 		this.shootingEntity = shooter;
+		this.anchorBlock = anchorBlock;
 	}
 
 	@Override
@@ -143,26 +143,13 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		this.ticksInGround = 0;
 	}
 
-	@SideOnly(Side.CLIENT)
-	public void setPositionAndRotationDirect(double x, double y, double z, float yaw, float pitch, int posRotationIncrements, boolean teleport)
-	{
-
-	}
-
-	@SideOnly(Side.CLIENT)
-	public void setVelocity(double x, double y, double z)
-	{
-		//Nop because it gets set improperly by mc network code
-	}
-
 	@Override
 	public boolean canRiderInteract() {
 		return true;
 	}
 
 
-	@Override
-	public boolean processInitialInteract(EntityPlayer entityplayer,
+	public boolean interact(EntityPlayer entityplayer,
 										  EnumHand hand) //interact : change back when Forge updates
 	{
 		if(isDead)
@@ -207,21 +194,34 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		return true;
 	}
 
+
 	protected boolean canFitPassenger(Entity passenger)
 	{
 		return true;
 	}
 
-	@Override
-	public boolean canBeCollidedWith()
+	//Returns a bounding box making up the size of the harpoon, from the anchor point to the harpoon
+	//This is usually a very large bounding box for large throws
+	//Use this to get a cursory idea of where the hapoon line is
+	public AxisAlignedBB getTotalBB()
 	{
-		return !isDead;
+		return new AxisAlignedBB(anchorPos.x, anchorPos.y, anchorPos.z, posX, posY, posZ);
 	}
 
-
+	int ticks = 0;
 	public void onUpdate()
 	{
 		super.onUpdate();
+
+		IBlockState baseState = world.getBlockState(anchorBlock);
+		if (!world.isRemote && baseState.getBlock() == Blocks.AIR)
+		{
+			this.setDead();
+			world.spawnEntity(new EntityItem(world, posX, posY, posZ, new ItemStack(Items.HARPOON)));
+			logger.info("Killing harpoon");
+			return;
+		}
+
 		if (this.prevRotationPitch == 0.0F && this.prevRotationYaw == 0.0F)
 		{
 			float f = MathHelper.sqrt(this.motionX * this.motionX + this.motionZ * this.motionZ);
@@ -231,7 +231,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 			this.prevRotationPitch = this.rotationPitch;
 		}
 
-		BlockPos blockpos = new BlockPos(this.xTile, this.yTile, this.zTile);
+		BlockPos blockpos = new BlockPos(this.tile);
 		IBlockState iblockstate = this.world.getBlockState(blockpos);
 		Block block = iblockstate.getBlock();
 
@@ -248,7 +248,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		if (this.inGround)
 		{
 
-			if (block != this.inTile && !this.world.collidesWithAnyBlock(this.getEntityBoundingBox().grow(0.05D)))
+			if (block != this.inTile && !this.world.collidesWithAnyBlock(this.getEntityBoundingBox().grow(0.005D)))
 			{
 				this.inGround = false;
 				this.motionX = 0.0;
@@ -330,6 +330,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		}
 	}
 
+
 	private void raytrace()
 	{
 		final Vec3d start = new Vec3d(this.posX, this.posY, this.posZ);
@@ -351,7 +352,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 			}
 			BlockPos pos = raytraceresult.getBlockPos();
 			IBlockState state = this.world.getBlockState(pos);
-			float strength = state.getBlock().getExplosionResistance(world, pos, this, new Explosion(world, this, pos.getX(), pos.getY(), pos.getZ(), 1.0f, true, true));
+			float strength = getBlockBlastResistance(pos, this);
 
 			//Only subtract blocks with a resistance > 0.3 (allows for an infinite number of flowers, leaves, grass, etc to be broken)
 			if (strength > 0.3f)
@@ -364,9 +365,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 				//Stop it here
 				this.health = 0.0f;
 
-				this.xTile = pos.getX();
-				this.yTile = pos.getY();
-				this.zTile = pos.getZ();
+				this.tile = new BlockPos(pos.getX(), pos.getY(), pos.getZ());
 				this.inTile = state.getBlock();
 
 				//Project where the harpoon will land so it touches the block that stopped it
@@ -468,17 +467,19 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 
 		if (this.inGround)
 		{
-			this.xTile = MathHelper.floor(this.posX);
-			this.yTile = MathHelper.floor(this.posY);
-			this.zTile = MathHelper.floor(this.posZ);
+			this.tile = new BlockPos(this.posX, this.posY, this.posZ);
 		}
 	}
 
 	public void writeEntityToNBT(NBTTagCompound compound)
 	{
-		compound.setInteger("xTile", this.xTile);
-		compound.setInteger("yTile", this.yTile);
-		compound.setInteger("zTile", this.zTile);
+		compound.setInteger("xTile", this.tile.getX());
+		compound.setInteger("yTile", this.tile.getY());
+		compound.setInteger("zTile", this.tile.getZ());
+		compound.setInteger("BaseX", this.anchorBlock.getX());
+		compound.setInteger("BaseY", this.anchorBlock.getY());
+		compound.setInteger("BaseZ", this.anchorBlock.getZ());
+
 		compound.setByte("inGround", (byte)(this.inGround ? 1 : 0));
 		compound.setFloat("Health", health);
 		compound.setDouble("AnchorX", anchorPos.x);
@@ -488,9 +489,8 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 
 	public void readEntityFromNBT(NBTTagCompound compound)
 	{
-		this.xTile = compound.getInteger("xTile");
-		this.yTile = compound.getInteger("yTile");
-		this.zTile = compound.getInteger("zTile");
+		this.tile = new BlockPos(compound.getInteger("xTile"), compound.getInteger("yTile"), compound.getInteger("zTile"));
+		this.anchorBlock = new BlockPos(compound.getInteger("BaseX"), compound.getInteger("BaseY"), compound.getInteger("BaseZ"));
 		this.inGround = compound.getByte("inGround") == 1;
 		this.health = compound.getFloat("Health");
 		this.anchorPos = new Vec3d(compound.getDouble("AnchorX"), compound.getDouble("AnchorY"), compound.getDouble("AnchorZ"));
@@ -498,24 +498,35 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 
 
 	@Override
-	public void writeSpawnData(ByteBuf buffer) {
+	public void writeSpawnData(ByteBuf buffer)
+	{
 		buffer.writeDouble(motionX);
 		buffer.writeDouble(motionY);
 		buffer.writeDouble(motionZ);
 		buffer.writeDouble(anchorPos.x);
 		buffer.writeDouble(anchorPos.y);
 		buffer.writeDouble(anchorPos.z);
+		buffer.writeInt(anchorBlock.getX());
+		buffer.writeInt(anchorBlock.getY());
+		buffer.writeInt(anchorBlock.getZ());
 	}
 
 	@Override
-	public void readSpawnData(ByteBuf additionalData) {
+	public void readSpawnData(ByteBuf additionalData)
+	{
 		motionX = additionalData.readDouble();
 		motionY = additionalData.readDouble();
 		motionZ = additionalData.readDouble();
 		anchorPos = new Vec3d(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble());
+		anchorBlock = new BlockPos(additionalData.readInt(), additionalData.readInt(), additionalData.readInt());
 	}
 
 	public Vec3d getAnchorPos() {
 		return anchorPos;
+	}
+
+	public static float getBlockBlastResistance(BlockPos pos, Entity exploder)
+	{
+		return exploder.world.getBlockState(pos).getBlock().getExplosionResistance(exploder.world, pos, exploder, new Explosion(exploder.world, exploder, pos.getX(), pos.getY(), pos.getZ(), 1.0f, true, true));
 	}
 }
