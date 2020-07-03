@@ -1,10 +1,8 @@
 package com.troy.tco.item;
 
 import com.troy.tco.TCO;
-import com.troy.tco.entity.EntityFlyingHarpoon;
-import com.troy.tco.init.Items;
+import com.troy.tco.entity.EntityHarpoon;
 import net.minecraft.creativetab.CreativeTabs;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.init.SoundEvents;
@@ -12,7 +10,7 @@ import net.minecraft.item.*;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.*;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.text.TextComponentString;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -89,40 +87,26 @@ public class ItemHarpoonGun extends ItemBase {
 	{
 		int chargeTime = this.getMaxItemUseDuration(stack) - timeLeft;
 		ItemStackData data = getItemStackData(stack);
-		if (chargeTime > 20 && entityLiving instanceof EntityPlayer && data != null)
+		if (chargeTime > 10 && entityLiving instanceof EntityPlayer && data != null)
 		{
 			EntityPlayer player = (EntityPlayer)entityLiving;
-			ItemStack itemstack = this.findAmmo(player);
 
-			if (!itemstack.isEmpty() || player.capabilities.isCreativeMode)
+			float vel = 5.0f;
+			//float vel = 2.0f;
+
+			if (!world.isRemote)
 			{
-				TCO.logger.info("Anchor point is at: [" + data.x + ", " + data.y + ", " + data.z + "]");
-				float vel = 5.0f;
+				EntityHarpoon projectile = new EntityHarpoon(world, player, new Vec3d(data.x, data.y, data.z));
+				projectile.shoot(player, player.rotationPitch, player.rotationYaw, 0.0f, vel, 0.0f);
 
-				if (!world.isRemote)
-				{
-					ItemHarpoon harpoon = (ItemHarpoon) (itemstack.getItem() instanceof ItemHarpoon ? itemstack.getItem() : Items.HARPOON);
-					EntityFlyingHarpoon projectile = new EntityFlyingHarpoon(world, player);
-					projectile.shoot(player, player.rotationPitch, player.rotationYaw, 0.0f, vel, 0.0f);
-
-					stack.damageItem(1, player);
-					world.spawnEntity(projectile);
-					removeItemStackData(stack);
-				}
-
-				world.playSound((EntityPlayer) null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.75f, 1.0f / (itemRand.nextFloat() * 0.4f + 2.0f) + 1.0f);
-
-				if (!player.capabilities.isCreativeMode)
-				{
-					itemstack.shrink(1);
-
-					if (itemstack.isEmpty())
-					{
-						player.inventory.deleteStack(itemstack);
-					}
-				}
-
+				stack.damageItem(1, player);
+				world.spawnEntity(projectile);
+				removeItemStackData(stack);
 			}
+
+			world.playSound((EntityPlayer) null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.75f, 1.0f / (itemRand.nextFloat() * 0.4f + 2.0f) + 1.0f);
+
+
 		}
 	}
 
@@ -142,13 +126,8 @@ public class ItemHarpoonGun extends ItemBase {
 	public ActionResult<ItemStack> onItemRightClick(World worldIn, EntityPlayer playerIn, EnumHand handIn)
 	{
 		ItemStack stack = playerIn.getHeldItem(handIn);
-		boolean hasAmmo = !this.findAmmo(playerIn).isEmpty();
 
-		if (!playerIn.capabilities.isCreativeMode && !hasAmmo)
-		{
-			return new ActionResult<ItemStack>(EnumActionResult.FAIL, stack);
-		}
-		else if (getItemStackData(stack) == null)
+		if (getItemStackData(stack) == null)
 		{
 			//playerIn.sendMessage(new TextComponentString("[TCO]: You cannot shoot a harpoon until you select the anchor point (right click)"));
 			return new ActionResult<ItemStack>(EnumActionResult.FAIL, stack);
@@ -171,7 +150,17 @@ public class ItemHarpoonGun extends ItemBase {
 		}
 		else
 		{
-			TCO.logger.info("Clicked! [" + hitX + ", " + hitY + ", " + hitZ + "]");
+			ItemStack ammo = findAmmo(player);
+			if (ammo == ItemStack.EMPTY && !player.capabilities.isCreativeMode) return EnumActionResult.FAIL;
+			if (!player.capabilities.isCreativeMode && !world.isRemote)
+			{
+				ammo.shrink(1);
+
+				if (ammo.isEmpty())
+				{
+					player.inventory.deleteStack(ammo);
+				}
+			}
 			ItemStackData data = new ItemStackData(hitX + pos.getX(), hitY + pos.getY(), hitZ + pos.getZ());
 			world.playSound((EntityPlayer) null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_LEASHKNOT_PLACE, SoundCategory.PLAYERS, 0.75f, 1.0f);
 			setItemStackData(stack, data);

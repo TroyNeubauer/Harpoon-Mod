@@ -9,6 +9,7 @@ import org.apache.logging.log4j.Logger;
 public class TCO
 {
 	public static Logger logger;
+	public static TCONetworkHandler networkHandler;
 
 	@SidedProxy(clientSide = "com.troy.tco.proxy.ClientProxy", serverSide = "com.troy.tco.proxy.ServerProxy")
 	public static IProxy proxy;
@@ -17,6 +18,7 @@ public class TCO
 	public void preInit(FMLPreInitializationEvent event)
 	{
 		logger = event.getModLog();
+		networkHandler = new TCONetworkHandler();
 	}
 
 	@Mod.EventHandler
