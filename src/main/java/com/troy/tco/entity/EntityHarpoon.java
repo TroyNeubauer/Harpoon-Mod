@@ -2,6 +2,7 @@ package com.troy.tco.entity;
 
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.troy.tco.api.IJoinable;
 import com.troy.tco.init.Items;
 import com.troy.tco.item.ItemHarpoon;
 import io.netty.buffer.ByteBuf;
@@ -39,7 +40,7 @@ import java.util.List;
 
 import static com.troy.tco.TCO.logger;
 
-public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditionalSpawnData
+public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditionalSpawnData, IJoinable
 {
 
 	private static final Predicate<Entity> ARROW_TARGETS = Predicates.and(EntitySelectors.NOT_SPECTATING, EntitySelectors.IS_ALIVE, new Predicate<Entity>()
@@ -53,20 +54,18 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 
 	private static final DataParameter<Byte> CRITICAL = EntityDataManager.<Byte>createKey(EntityArrow.class, DataSerializers.BYTE);
 	private float health;
-	private BlockPos tile, anchorBlock;
+	private BlockPos tile;
 	private Block inTile;
 	protected boolean inGround;
 	protected int timeInGround;
 	public EntityLivingBase shootingEntity;
 	private int ticksInGround;
 	private int ticksInAir;
-	private Vec3d anchorPos;
 
 	public EntityHarpoon(World worldIn)
 	{
 		super(worldIn);
 		this.tile = new BlockPos(-1, -1, -1);
-		this.anchorBlock = new BlockPos(-1, -1, -1);
 		this.health = 1.5f;
 		setSize(0.5f, 0.5f);
 	}
@@ -77,12 +76,10 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		this.setPosition(x, y, z);
 	}
 
-	public EntityHarpoon(World worldIn, EntityLivingBase shooter, Vec3d anchorPos, BlockPos anchorBlock)
+	public EntityHarpoon(World worldIn, EntityLivingBase shooter)
 	{
 		this(worldIn, shooter.posX, shooter.posY + (double) shooter.getEyeHeight() - 0.1, shooter.posZ);
-		this.anchorPos = anchorPos;
 		this.shootingEntity = shooter;
-		this.anchorBlock = anchorBlock;
 	}
 
 	@Override
@@ -143,84 +140,9 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		this.ticksInGround = 0;
 	}
 
-	@Override
-	public boolean canRiderInteract() {
-		return true;
-	}
-
-
-	public boolean interact(EntityPlayer entityplayer,
-										  EnumHand hand) //interact : change back when Forge updates
-	{
-		if(isDead)
-			return false;
-		if(world.isRemote)
-			return false;
-		// If they are using a repair tool, don't put them in
-		ItemStack currentItem = entityplayer.getHeldItemMainhand();
-		if(currentItem.getItem() instanceof ItemLead)
-		{
-			if(getControllingPassenger() instanceof EntityAnimal)
-			{
-				// Minecraft will handle dismounting the mob
-				return true;
-			}
-
-			double checkRange = 10;
-			List<EntityAnimal> nearbyAnimals = world.getEntitiesWithinAABB(EntityAnimal.class,
-					new AxisAlignedBB(posX - checkRange, posY - checkRange, posZ - checkRange, posX + checkRange,
-							posY + checkRange, posZ + checkRange));
-			for(EntityAnimal animal : nearbyAnimals)
-			{
-				if(animal.getLeashed() && animal.getLeashHolder() == entityplayer)
-				{
-					if(animal.startRiding(this))
-					{
-						animal.clearLeashed(true, !entityplayer.capabilities.isCreativeMode);
-					}
-					else
-					{
-						logger.warn("Failed to put pet in seat");
-					}
-				}
-			}
-			return true;
-		}
-		// Put them in the seat
-		if(!entityplayer.startRiding(this))
-		{
-			logger.warn("Failed to mount seat");
-		}
-		return true;
-	}
-
-
-	protected boolean canFitPassenger(Entity passenger)
-	{
-		return true;
-	}
-
-	//Returns a bounding box making up the size of the harpoon, from the anchor point to the harpoon
-	//This is usually a very large bounding box for large throws
-	//Use this to get a cursory idea of where the hapoon line is
-	public AxisAlignedBB getTotalBB()
-	{
-		return new AxisAlignedBB(anchorPos.x, anchorPos.y, anchorPos.z, posX, posY, posZ);
-	}
-
-	int ticks = 0;
 	public void onUpdate()
 	{
 		super.onUpdate();
-
-		IBlockState baseState = world.getBlockState(anchorBlock);
-		if (!world.isRemote && baseState.getBlock() == Blocks.AIR)
-		{
-			this.setDead();
-			world.spawnEntity(new EntityItem(world, posX, posY, posZ, new ItemStack(Items.HARPOON)));
-			logger.info("Killing harpoon");
-			return;
-		}
 
 		if (this.prevRotationPitch == 0.0F && this.prevRotationYaw == 0.0F)
 		{
@@ -476,24 +398,16 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		compound.setInteger("xTile", this.tile.getX());
 		compound.setInteger("yTile", this.tile.getY());
 		compound.setInteger("zTile", this.tile.getZ());
-		compound.setInteger("BaseX", this.anchorBlock.getX());
-		compound.setInteger("BaseY", this.anchorBlock.getY());
-		compound.setInteger("BaseZ", this.anchorBlock.getZ());
 
 		compound.setByte("inGround", (byte)(this.inGround ? 1 : 0));
 		compound.setFloat("Health", health);
-		compound.setDouble("AnchorX", anchorPos.x);
-		compound.setDouble("AnchorY", anchorPos.y);
-		compound.setDouble("AnchorZ", anchorPos.z);
 	}
 
 	public void readEntityFromNBT(NBTTagCompound compound)
 	{
 		this.tile = new BlockPos(compound.getInteger("xTile"), compound.getInteger("yTile"), compound.getInteger("zTile"));
-		this.anchorBlock = new BlockPos(compound.getInteger("BaseX"), compound.getInteger("BaseY"), compound.getInteger("BaseZ"));
 		this.inGround = compound.getByte("inGround") == 1;
 		this.health = compound.getFloat("Health");
-		this.anchorPos = new Vec3d(compound.getDouble("AnchorX"), compound.getDouble("AnchorY"), compound.getDouble("AnchorZ"));
 	}
 
 
@@ -503,12 +417,6 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		buffer.writeDouble(motionX);
 		buffer.writeDouble(motionY);
 		buffer.writeDouble(motionZ);
-		buffer.writeDouble(anchorPos.x);
-		buffer.writeDouble(anchorPos.y);
-		buffer.writeDouble(anchorPos.z);
-		buffer.writeInt(anchorBlock.getX());
-		buffer.writeInt(anchorBlock.getY());
-		buffer.writeInt(anchorBlock.getZ());
 	}
 
 	@Override
@@ -517,16 +425,40 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		motionX = additionalData.readDouble();
 		motionY = additionalData.readDouble();
 		motionZ = additionalData.readDouble();
-		anchorPos = new Vec3d(additionalData.readDouble(), additionalData.readDouble(), additionalData.readDouble());
-		anchorBlock = new BlockPos(additionalData.readInt(), additionalData.readInt(), additionalData.readInt());
-	}
-
-	public Vec3d getAnchorPos() {
-		return anchorPos;
 	}
 
 	public static float getBlockBlastResistance(BlockPos pos, Entity exploder)
 	{
 		return exploder.world.getBlockState(pos).getBlock().getExplosionResistance(exploder.world, pos, exploder, new Explosion(exploder.world, exploder, pos.getX(), pos.getY(), pos.getZ(), 1.0f, true, true));
 	}
+
+	@Override
+	public Vec3d getPos()
+	{
+		return getPositionVector();
+	}
+
+	@Override
+	public boolean isBroken()
+	{
+		return isDead;
+	}
+
+	@Override
+	public Entity getEntity()
+	{
+		return this;
+	}
+
+	/*
+
+			IBlockState baseState = world.getBlockState(anchorBlock);
+		if (!world.isRemote && baseState.getBlock() == Blocks.AIR)
+		{
+			this.setDead();
+			world.spawnEntity(new EntityItem(world, posX, posY, posZ, new ItemStack(Items.HARPOON)));
+			logger.info("Killing harpoon");
+			return;
+		}
+	 */
 }

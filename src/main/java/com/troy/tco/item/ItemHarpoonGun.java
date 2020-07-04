@@ -1,14 +1,12 @@
 package com.troy.tco.item;
 
-import com.troy.tco.TCO;
+import com.troy.tco.entity.EntityFixedJoinable;
 import com.troy.tco.entity.EntityHarpoon;
-import net.minecraft.block.Block;
-import net.minecraft.client.renderer.Vector3d;
+import com.troy.tco.entity.EntityHarpoonWire;
 import net.minecraft.creativetab.CreativeTabs;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityLivingBase;
 import net.minecraft.entity.player.EntityPlayer;
-import net.minecraft.init.Blocks;
 import net.minecraft.init.SoundEvents;
 import net.minecraft.item.*;
 import net.minecraft.nbt.NBTTagCompound;
@@ -104,16 +102,21 @@ public class ItemHarpoonGun extends ItemBase {
 
 			if (!world.isRemote)
 			{
-				EntityHarpoon projectile = new EntityHarpoon(world, player, data.pos, data.block);
-				projectile.shoot(player, player.rotationPitch, player.rotationYaw, 0.0f, vel, 0.0f);
+				EntityFixedJoinable anchor = new EntityFixedJoinable(world, data.block, data.pos);
+				EntityHarpoon harpoon = new EntityHarpoon(world, player);
+				harpoon.shoot(player, player.rotationPitch, player.rotationYaw, 0.0f, vel, 0.0f);
+
+				world.spawnEntity(anchor);
+				world.spawnEntity(harpoon);
+
+				EntityHarpoonWire wire = new EntityHarpoonWire(world, anchor, harpoon);
+				world.spawnEntity(wire);
 
 				stack.damageItem(1, player);
-				world.spawnEntity(projectile);
 				removeItemStackData(stack);
 			}
 
 			world.playSound((EntityPlayer) null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.75f, 1.0f / (itemRand.nextFloat() * 0.4f + 2.0f) + 1.0f);
-
 
 		}
 	}

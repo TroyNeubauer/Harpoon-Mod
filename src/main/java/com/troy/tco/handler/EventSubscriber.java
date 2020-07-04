@@ -2,6 +2,7 @@ package com.troy.tco.handler;
 
 import com.troy.tco.Constants;
 import com.troy.tco.TCO;
+import com.troy.tco.entity.EntityHarpoonWire;
 import com.troy.tco.init.Entities;
 import com.troy.tco.entity.EntityHarpoon;
 import com.troy.tco.init.Items;
@@ -80,11 +81,11 @@ public class EventSubscriber
 			Vec3d end = playerPos.addVector(playerLook.x * harpoonReachDistance, playerLook.y * harpoonReachDistance, playerLook.z * harpoonReachDistance);
 			for (Entity entity : Minecraft.getMinecraft().world.getLoadedEntityList())
 			{
-				if (entity instanceof EntityHarpoon)
+				if (entity instanceof EntityHarpoonWire)
 				{
-					EntityHarpoon harpoon = (EntityHarpoon) entity;
+					EntityHarpoonWire wire = (EntityHarpoonWire) entity;
 
-					RayTraceResult result = harpoon.getTotalBB().calculateIntercept(playerPos, playerLook);
+					RayTraceResult result = wire.getEntityBoundingBox().calculateIntercept(playerPos, playerLook);
 					if (result != null && result.typeOfHit != RayTraceResult.Type.MISS)
 						logger.info("Result: " + String.valueOf(result));
 
