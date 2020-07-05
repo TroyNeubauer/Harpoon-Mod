@@ -16,9 +16,17 @@ public class EntityFixedJoinable extends Entity implements IJoinable, IEntityAdd
 {
 	private BlockPos tile;
 
-	public EntityFixedJoinable(World world, BlockPos tile, Vec3d pos)
+	public EntityFixedJoinable(World world)
 	{
 		super(world);
+		setSize(0.5f, 0.5f);
+		this.forceSpawn = true;
+	}
+
+
+	public EntityFixedJoinable(World world, BlockPos tile, Vec3d pos)
+	{
+		this(world);
 		this.tile = tile;
 		setPosition(pos.x, pos.y, pos.z);
 	}
@@ -33,11 +41,6 @@ public class EntityFixedJoinable extends Entity implements IJoinable, IEntityAdd
 	@Override
 	public void onUpdate()
 	{
-		super.onUpdate();
-		if (ticks++ % 40 == 0)
-		{
-			logger.info("fixed wire begin!");
-		}
 		super.onUpdate();
 
 		if (world.getBlockState(tile).getBlock() == Blocks.AIR)
@@ -66,15 +69,15 @@ public class EntityFixedJoinable extends Entity implements IJoinable, IEntityAdd
 	@Override
 	protected void readEntityFromNBT(NBTTagCompound compound)
 	{
-		tile = new BlockPos(compound.getInteger("TileX"), compound.getInteger("TileY"), compound.getInteger("TileZ"));
+		tile = new BlockPos(compound.getInteger("TCOTileX"), compound.getInteger("TCOTileY"), compound.getInteger("TCOTileZ"));
 	}
 
 	@Override
 	protected void writeEntityToNBT(NBTTagCompound compound)
 	{
-		compound.setInteger("TileX", tile.getX());
-		compound.setInteger("TileY", tile.getY());
-		compound.setInteger("TileZ", tile.getZ());
+		compound.setInteger("TCOTileX", tile.getX());
+		compound.setInteger("TCOTileY", tile.getY());
+		compound.setInteger("TCOTileZ", tile.getZ());
 	}
 
 	@Override

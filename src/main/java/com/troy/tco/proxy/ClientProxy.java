@@ -1,10 +1,7 @@
 package com.troy.tco.proxy;
 
 import com.troy.tco.TCO;
-import com.troy.tco.entity.EntiryHarpoonRenderer;
-import com.troy.tco.entity.EntiryHarpoonWireRenderer;
-import com.troy.tco.entity.EntityHarpoon;
-import com.troy.tco.entity.EntityHarpoonWire;
+import com.troy.tco.entity.*;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.item.Item;
 import net.minecraftforge.client.model.ModelLoader;
@@ -18,6 +15,7 @@ public class ClientProxy extends CommonProxy
 		TCO.logger.info("Registered entity harpoon renderer");
 		RenderingRegistry.registerEntityRenderingHandler(EntityHarpoon.class, new EntiryHarpoonRenderer());
 		RenderingRegistry.registerEntityRenderingHandler(EntityHarpoonWire.class, new EntiryHarpoonWireRenderer());
+		RenderingRegistry.registerEntityRenderingHandler(EntityFixedJoinable.class, new EntityFixedJoinableRenderer());
 	}
 
 	@Override

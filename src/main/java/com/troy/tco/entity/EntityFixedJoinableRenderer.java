@@ -13,7 +13,7 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
 @SideOnly(Side.CLIENT)
-public class EntiryFixedJoinableRenderer implements IRenderFactory<EntityFixedJoinable>
+public class EntityFixedJoinableRenderer implements IRenderFactory<EntityFixedJoinable>
 {
 	private static final ResourceLocation texture = new ResourceLocation(Constants.MODID, "entity/harpoon.png");
 
@@ -22,7 +22,7 @@ public class EntiryFixedJoinableRenderer implements IRenderFactory<EntityFixedJo
 		public HarpoonModel()
 		{
 			testCube = new ModelRenderer(this);
-			testCube.addBox(-0.25f, -0.25f, -0.25f, 0.5, 0.5, 0.5);
+			testCube.addBox(-0.25f, -0.25f, -0.25f, 1, 1, 1);
 			testCube.setRotationPoint(0, 0, 0);
 		}
 
@@ -47,6 +47,7 @@ public class EntiryFixedJoinableRenderer implements IRenderFactory<EntityFixedJo
 				GlStateManager.disableTexture2D();
 				GlStateManager.disableCull();
 				GlStateManager.translate(x, y, z);
+				GlStateManager.color(0.0f, 0.0f, 1.0f);
 				modelEmpty.render(entity, 0.0f, 0.0f, 0.0f, entityYaw, 0.0f, 0.6125f);
 				GlStateManager.popMatrix();
 				GlStateManager.enableTexture2D();

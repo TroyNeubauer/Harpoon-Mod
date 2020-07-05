@@ -1,6 +1,7 @@
 package com.troy.tco.entity;
 
 import com.troy.tco.api.IJoinable;
+import com.troy.tco.util.EntityID;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.EntityAnimal;
@@ -14,6 +15,7 @@ import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
 import java.util.List;
+import java.util.UUID;
 
 import static com.troy.tco.TCO.logger;
 
@@ -21,11 +23,19 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 {
 	private IJoinable start, end;
 
-	public EntityHarpoonWire(World world, IJoinable start, IJoinable end)
+	public EntityHarpoonWire(World world)
 	{
 		super(world);
+		this.forceSpawn = true;
+		setSize(0.5f, 0.5f);
+	}
+
+	public EntityHarpoonWire(World world, IJoinable start, IJoinable end)
+	{
+		this(world);
 		this.start = start;
 		this.end = end;
+		onUpdate();
 	}
 
 	@Override
@@ -44,10 +54,6 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	public void onUpdate()
 	{
 		super.onUpdate();
-		if (ticks++ % 40 == 0)
-		{
-			logger.info("wire!");
-		}
 		if (!this.world.isRemote)
 		{
 			if (this.start.isBroken() || this.end.isBroken())
@@ -58,14 +64,16 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 				this.setDead();
 				return;
 			}
-			double newX = (start.getPos().x + end.getPos().x) / 2.0;
-			double newY = (start.getPos().y + end.getPos().y) / 2.0;
-			double newZ = (start.getPos().z + end.getPos().z) / 2.0;
-			if (newX != this.posX || newY != this.posY || newZ != this.posZ)
-			{
-				this.setPosition(newX, newY, newZ);
-				this.setEntityBoundingBox(new AxisAlignedBB(start.getPos(), end.getPos()));
-			}
+		}
+		float distance = (float) start.getPos().subtract(end.getPos()).lengthVector();
+		double newX = (start.getPos().x + end.getPos().x) / 2.0;
+		double newY = (start.getPos().y + end.getPos().y) / 2.0;
+		double newZ = (start.getPos().z + end.getPos().z) / 2.0;
+		if (newX != this.posX || newY != this.posY || newZ != this.posZ)
+		{
+			this.setPosition(newX, newY, newZ);
+			//this.setSize(distance, distance);
+			this.setEntityBoundingBox(new AxisAlignedBB(start.getPos(), end.getPos()));
 		}
 	}
 
@@ -121,19 +129,29 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	@Override
 	protected void readEntityFromNBT(NBTTagCompound compound)
 	{
-		int startID = compound.getInteger("StartID");
-		int endID = compound.getInteger("EndID");
-		setLinks(startID, endID);
+		UUID startID = compound.getUniqueId("TCOStartID");
+		UUID endID = compound.getUniqueId("TCOEndID");
+		setLinks(EntityID.from(startID), EntityID.from(endID));
 	}
 
-	private void setLinks(int startID, int endID)
+	private int failedLinkCount = 0;
+	private void setLinks(EntityID startID, EntityID endID)
 	{
-		Entity start = world.getEntityByID(startID);
-		Entity end = world.getEntityByID(endID);
+		Entity start = startID.load(world);
+		Entity end = endID.load(world);
+		if (start == null)
+		{
+			logger.warn("Failed to read EntityHarpoonWire! Start's entity ID is invalid! Start: " + startID);
+		}
+		if (end == null)
+		{
+			logger.warn("Failed to read EntityHarpoonWire! Start's entity ID is invalid! Start: " + endID);
+		}
 		if (start == null || end == null)
 		{
-			logger.warn("Failed to read EntityHarpoonWire! Start or end entity ID's are invalid! Start: " + startID + " end: " + endID);
+			failedLinkCount++;
 			this.setDead();
+			return;
 		}
 		if (!(start instanceof IJoinable))
 		{
@@ -156,8 +174,9 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	@Override
 	protected void writeEntityToNBT(NBTTagCompound compound)
 	{
-		compound.setInteger("StartID", start.getEntity().getEntityId());
-		compound.setInteger("EndID", end.getEntity().getEntityId());
+		compound.setUniqueId("TCOStartID", start.getEntity().getUniqueID());
+		compound.setUniqueId("TCOEndID", end.getEntity().getUniqueID());
+		logger.info("Saving wire entity!");
 	}
 
 	@Override
@@ -191,6 +210,14 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	public void readSpawnData(ByteBuf additionalData)
 	{
 		logger.info("Reading harpoon wire spawn data");
-		setLinks(additionalData.readInt(), additionalData.readInt());
+		setLinks(EntityID.from(additionalData.readInt()), EntityID.from(additionalData.readInt()));
+	}
+
+	public IJoinable getEnd() {
+		return end;
+	}
+
+	public IJoinable getStart() {
+		return start;
 	}
 }

@@ -74,6 +74,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 	{
 		this(worldIn);
 		this.setPosition(x, y, z);
+		this.forceSpawn = true;
 	}
 
 	public EntityHarpoon(World worldIn, EntityLivingBase shooter)
@@ -102,7 +103,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 		return distance < d0 * d0;
 	}
 
-	public void shoot(Entity shooter, float pitch, float yaw, float p_184547_4_, float velocity, float inaccuracy)
+	public void shoot(Entity shooter, float pitch, float yaw, float ignored, float velocity, float inaccuracy)
 	{
 		float f = -MathHelper.sin(yaw * 0.017453292F) * MathHelper.cos(pitch * 0.017453292F);
 		float f1 = -MathHelper.sin(pitch * 0.017453292F);

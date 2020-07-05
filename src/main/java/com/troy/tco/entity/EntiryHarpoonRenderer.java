@@ -63,6 +63,7 @@ public class EntiryHarpoonRenderer implements IRenderFactory<EntityHarpoon>
 				GlStateManager.disableTexture2D();
 				GlStateManager.disableCull();
 				GlStateManager.translate(x, y, z);
+				GlStateManager.color(0.1f, 0.1f, 0.1f);
 				modelEmpty.render(entity, 0.0f, 0.0f, 0.0f, entityYaw, 0.0f, 0.6125f);
 				GlStateManager.popMatrix();
 				GlStateManager.enableTexture2D();
