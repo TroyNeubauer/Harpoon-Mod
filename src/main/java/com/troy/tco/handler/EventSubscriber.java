@@ -6,10 +6,12 @@ import com.troy.tco.entity.EntityHarpoonWire;
 import com.troy.tco.init.Entities;
 import com.troy.tco.entity.EntityHarpoon;
 import com.troy.tco.init.Items;
+import com.troy.tco.util.MathUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.util.math.Vec3d;
 import net.minecraftforge.client.event.ModelRegistryEvent;
@@ -71,7 +73,6 @@ public class EventSubscriber
 			{
 				regularClickDistance = Math.sqrt(Minecraft.getMinecraft().objectMouseOver.hitVec.subtract(Minecraft.getMinecraft().player.getPositionVector()).lengthSquared());
 			}
-			logger.info("Distance: " + regularClickDistance);
 
 			EntityPlayerSP player = Minecraft.getMinecraft().player;
 			float partialTicks = Minecraft.getMinecraft().getRenderPartialTicks();
@@ -84,11 +85,16 @@ public class EventSubscriber
 				if (entity instanceof EntityHarpoonWire)
 				{
 					EntityHarpoonWire wire = (EntityHarpoonWire) entity;
-
-					RayTraceResult result = wire.getEntityBoundingBox().calculateIntercept(playerPos, playerLook);
-					if (result != null && result.typeOfHit != RayTraceResult.Type.MISS)
-						logger.info("Result: " + String.valueOf(result));
-
+					if (wire.getStart() == null || wire.getEnd() == null)
+					{
+						//The wire's entities are still loading
+						continue;
+					}
+					double distanceToWire = MathUtils.distBetweenLines(playerPos, end, wire.getStart().getPos(), wire.getEnd().getPos());
+					if (distanceToWire < regularClickDistance && distanceToWire < 1.0)
+					{
+						logger.info("Clicked line: " + distanceToWire);
+					}
 				}
 			}
 		}

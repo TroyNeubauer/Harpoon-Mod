@@ -27,6 +27,7 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	{
 		super(world);
 		this.forceSpawn = true;
+		this.ignoreFrustumCheck = true;
 		setSize(0.5f, 0.5f);
 	}
 
@@ -54,6 +55,9 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	public void onUpdate()
 	{
 		super.onUpdate();
+
+		ensureLinks();
+		if (start == null || end == null) return;
 		if (!this.world.isRemote)
 		{
 			if (this.start.isBroken() || this.end.isBroken())
@@ -73,7 +77,7 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 		{
 			this.setPosition(newX, newY, newZ);
 			//this.setSize(distance, distance);
-			this.setEntityBoundingBox(new AxisAlignedBB(start.getPos(), end.getPos()));
+			//this.setEntityBoundingBox(new AxisAlignedBB(start.getPos(), end.getPos()));
 		}
 	}
 
@@ -131,44 +135,58 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	{
 		UUID startID = compound.getUniqueId("TCOStartID");
 		UUID endID = compound.getUniqueId("TCOEndID");
-		setLinks(EntityID.from(startID), EntityID.from(endID));
+		setLinks(EntityID.from(startID), EntityID.from(endID), false);
 	}
 
-	private int failedLinkCount = 0;
-	private void setLinks(EntityID startID, EntityID endID)
+	private EntityID tempStartID, tempEndID;
+	private void setLinks(EntityID startID, EntityID endID, boolean force)
 	{
+		tempStartID = startID;
+		tempEndID = endID;
 		Entity start = startID.load(world);
 		Entity end = endID.load(world);
-		if (start == null)
+		if (start == null && force)
 		{
 			logger.warn("Failed to read EntityHarpoonWire! Start's entity ID is invalid! Start: " + startID);
+			setDead();
+			return;
 		}
-		if (end == null)
+		if (end == null && force)
 		{
 			logger.warn("Failed to read EntityHarpoonWire! Start's entity ID is invalid! Start: " + endID);
+			setDead();
+			return;
 		}
 		if (start == null || end == null)
 		{
-			failedLinkCount++;
-			this.setDead();
+			logger.info("Failed to find linked entities on the first attempt");
 			return;
 		}
 		if (!(start instanceof IJoinable))
 		{
-			logger.warn("Failed to read EntityHarpoonWire! Start entity class is not an IJoinable! Got: " + start.getClass());
+			logger.error("Failed to read EntityHarpoonWire! Start entity class is not an IJoinable! Got: " + start.getClass());
 			this.setDead();
 			return;
 		}
 		if (!(end instanceof IJoinable))
 		{
 			((IJoinable) start).getEntity().setDead();
-			logger.warn("Failed to read EntityHarpoonWire! End entity class is not an IJoinable! Got: " + end.getClass());
+			logger.error("Failed to read EntityHarpoonWire! End entity class is not an IJoinable! Got: " + end.getClass());
 			this.setDead();
 			return;
 		}
 		this.start = (IJoinable) start;
 		this.end = (IJoinable) end;
 		logger.info("Read wire links successfully!");
+	}
+
+	private int tryCount = 0;
+	private void ensureLinks()
+	{
+		if (start == null && end == null)
+		{
+			setLinks(tempStartID, tempEndID, tryCount >= 5);
+		}
 	}
 
 	@Override
@@ -210,7 +228,7 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	public void readSpawnData(ByteBuf additionalData)
 	{
 		logger.info("Reading harpoon wire spawn data");
-		setLinks(EntityID.from(additionalData.readInt()), EntityID.from(additionalData.readInt()));
+		setLinks(EntityID.from(additionalData.readInt()), EntityID.from(additionalData.readInt()), false);
 	}
 
 	public IJoinable getEnd() {

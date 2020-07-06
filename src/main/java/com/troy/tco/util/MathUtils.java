@@ -119,7 +119,7 @@ public class MathUtils
 		Vec3d i1Clamped = clampPointToLine(i1, l1Start, l1End);
 		Vec3d i2Clamped = clampPointToLine(i2, l2Start, l2End);
 		double result = i1Clamped.subtract(i2Clamped).lengthVector();
-		System.out.println("Solving min-distance line equation took " + ((System.nanoTime() - start) / 1000.0) + " micro seconds");
+		//System.out.println("Solving min-distance line equation took " + ((System.nanoTime() - start) / 1000.0) + " micro seconds");
 		return result;
 	}
 

@@ -17,6 +17,8 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 import org.lwjgl.opengl.GL11;
 
+import static com.troy.tco.TCO.logger;
+
 @SideOnly(Side.CLIENT)
 public class EntiryHarpoonWireRenderer implements IRenderFactory<EntityHarpoonWire>
 {
@@ -48,35 +50,34 @@ public class EntiryHarpoonWireRenderer implements IRenderFactory<EntityHarpoonWi
 
 			@Override
 			public void doRender(EntityHarpoonWire entity, double x, double y, double z, float entityYaw, float partialTicks) {
+				if (entity.getStart() != null && entity.getEnd() != null)
+				{
+					//logger.info("rendering wire");
+					//GlStateManager.pushMatrix();
+					Tessellator tessellator = Tessellator.getInstance();
+					BufferBuilder bufferbuilder = tessellator.getBuffer();
+					//GlStateManager.color(0.0F, 0.0F, 0.0F, 1.0F);
+					bufferbuilder.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_NORMAL);
+
+					IJoinable start = entity.getStart(), end = entity.getEnd();
+					bufferbuilder.pos(start.getPos().x, start.getPos().y, start.getPos().z).normal(0.0F, 0.0F, -1.0F).endVertex();
+					bufferbuilder.pos(start.getPos().x, start.getPos().y, start.getPos().z).normal(0.0F, 0.0F, -1.0F).endVertex();
+					bufferbuilder.pos(end.getPos().x, end.getPos().y, end.getPos().z).normal(0.0F, 0.0F, -1.0F).endVertex();
+					//logger.info("Anchor pos is " + entity.getAnchorPos());
+					tessellator.draw();
+
+					//GlStateManager.popMatrix();
+				}
+
 				GlStateManager.pushMatrix();
 				GlStateManager.disableTexture2D();
 				GlStateManager.enableBlend();
 				GlStateManager.blendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
-				GlStateManager.disableCull();
 				GlStateManager.translate(x, y, z);
 				GlStateManager.color(0.0f, 0.0f, 0.0f, 0.3f);
 				modelEmpty.render(entity, 0.0f, 0.0f, 0.0f, entityYaw, 0.0f, 0.6125f);
-				GlStateManager.disableAlpha();
-				GlStateManager.popMatrix();
-
-
-				GlStateManager.pushMatrix();
-				GlStateManager.disableTexture2D();
-				GlStateManager.disableCull();
-				Tessellator tessellator = Tessellator.getInstance();
-				BufferBuilder bufferbuilder = tessellator.getBuffer();
-				GlStateManager.color(0.0F, 0.0F, 0.0F, 1.0F);
-				bufferbuilder.begin(GL11.GL_TRIANGLES, DefaultVertexFormats.POSITION_NORMAL);
-
-				IJoinable start = entity.getStart(), end = entity.getEnd();
-				bufferbuilder.pos(start.getPos().x, start.getPos().y, start.getPos().z).normal(0.0F, 0.0F, -1.0F).endVertex();
-				bufferbuilder.pos(start.getPos().x, start.getPos().y, start.getPos().z).normal(0.0F, 0.0F, -1.0F).endVertex();
-				bufferbuilder.pos(end.getPos().x, end.getPos().y, end.getPos().z).normal(0.0F, 0.0F, -1.0F).endVertex();
-				//logger.info("Anchor pos is " + entity.getAnchorPos());
-				tessellator.draw();
-				GlStateManager.enableCull();
 				GlStateManager.enableTexture2D();
-
+				GlStateManager.disableBlend();
 				GlStateManager.popMatrix();
 
 			}
