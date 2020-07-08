@@ -2,6 +2,7 @@ package com.troy.tco.handler;
 
 import com.troy.tco.Constants;
 import com.troy.tco.TCO;
+import com.troy.tco.TCONetworkHandler;
 import com.troy.tco.entity.EntityHarpoonWire;
 import com.troy.tco.init.Entities;
 import com.troy.tco.entity.EntityHarpoon;
@@ -94,6 +95,7 @@ public class EventSubscriber
 					if (distanceToWire < regularClickDistance && distanceToWire < 1.0)
 					{
 						logger.info("Clicked line: " + distanceToWire);
+						TCO.networkHandler.sendToServer(new TCONetworkHandler.WireInteractMessage(wire));
 					}
 				}
 			}

@@ -81,7 +81,7 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 		}
 	}
 
-	public boolean interact(EntityPlayer entityplayer, EnumHand hand) //interact : change back when Forge updates
+	public boolean interact(EntityPlayer entityplayer) //interact : change back when Forge updates
 	{
 		if(isDead)
 			return false;
