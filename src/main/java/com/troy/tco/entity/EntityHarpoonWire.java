@@ -3,6 +3,7 @@ package com.troy.tco.entity;
 import com.troy.tco.api.IJoinable;
 import com.troy.tco.util.EntityID;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.client.renderer.Vector3d;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
@@ -11,9 +12,12 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.AxisAlignedBB;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
+import org.lwjgl.util.vector.Vector3f;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,6 +26,7 @@ import static com.troy.tco.TCO.logger;
 public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnData
 {
 	private IJoinable start, end;
+	private HashMap<Integer, Vector3f> velocities = new HashMap<>();
 
 	public EntityHarpoonWire(World world)
 	{
@@ -79,6 +84,7 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 			//this.setSize(distance, distance);
 			//this.setEntityBoundingBox(new AxisAlignedBB(start.getPos(), end.getPos()));
 		}
+
 	}
 
 	public boolean interact(EntityPlayer entityplayer) //interact : change back when Forge updates
@@ -124,6 +130,38 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 		return true;
 	}
 
+	@Override
+	public void updatePassenger(Entity passenger)
+	{
+		if (isPassenger(passenger))
+		{
+			logger.info("Updating " + passenger);
+			Vector3f velocity = velocities.get(passenger.getEntityId());
+			Vector3f force = new Vector3f();
+			force.y = 9.81f / 20.0f / 10.0f;
+
+			Vector3f.add(velocity, force, velocity);
+			passenger.posX += velocity.x;
+			passenger.posY += velocity.y;
+			passenger.posZ += velocity.z;
+			passenger.setPosition(passenger.posX, passenger.posY, passenger.posZ);
+			velocities.put(passenger.getEntityId(), velocity);
+		}
+	}
+
+	@Override
+	protected void addPassenger(Entity passenger)
+	{
+		super.addPassenger(passenger);
+		velocities.put(passenger.getEntityId(), new Vector3f(0.0f, 0.0f, 0.0f));
+	}
+
+	@Override
+	protected void removePassenger(Entity passenger)
+	{
+		super.removePassenger(passenger);
+		velocities.remove(passenger.getEntityId());
+	}
 
 	protected boolean canFitPassenger(Entity passenger)
 	{
