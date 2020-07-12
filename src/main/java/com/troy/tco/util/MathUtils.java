@@ -1,10 +1,8 @@
 package com.troy.tco.util;
 
-import net.minecraft.util.math.Vec3d;
-
 public class MathUtils
 {
-	public static Vec3d clampPointToLine(Vec3d pointToClamp, Vec3d lineStart, Vec3d lineEnd)
+	public static void clampPointToLine(Vector3f pointToClamp, Vector3f lineStart, Vector3f lineEnd)
 	{
 		double minX, minY, minZ, maxX, maxY, maxZ;
 		if(lineStart.x <= lineEnd.x)
@@ -37,22 +35,23 @@ public class MathUtils
 			minZ = lineEnd.z;
 			maxZ = lineStart.z;
 		}
-		return new Vec3d((pointToClamp.x < minX) ? minX : Math.min(pointToClamp.x, maxX),
+		pointToClamp.set((pointToClamp.x < minX) ? minX : Math.min(pointToClamp.x, maxX),
 				(pointToClamp.y < minY) ? minY : Math.min(pointToClamp.y, maxY),
 				(pointToClamp.z < minZ) ? minZ : Math.min(pointToClamp.z, maxZ));
 	}
 
-	//Returns the shortest distance between 2 line segments in 3d space
-	public static double distBetweenLines(Vec3d l1Start, Vec3d l1End, Vec3d l2Start, Vec3d l2End)
+	//Returns the shortest distance between 2 line segments in 3d space and sets the values of resultA and resultB
+	//To the 2 points making up the shortest line segment between the 2 input line segments
+	public static double distBetweenLines(Vector3f l1Start, Vector3f l1End, Vector3f l2Start, Vector3f l2End, Vector3f resultA, Vector3f resultB)
 	{
 		long start = System.nanoTime();
-		Vec3d p1, p2, p3, p4, d1, d2;
+		Vector3f p1, p2, p3, p4, d1, d2;
 		p1 = l1Start;
 		p2 = l1End;
 		p3 = l2Start;
 		p4 = l2End;
-		d1 = p2.subtract(p1);
-		d2 = p4.subtract(p3);
+		d1 = Vector3f.subtract(p2, p1);
+		d2 = Vector3f.subtract(p4, p3);
 		double eq1nCoeff = (d1.x * d2.x) + (d1.y * d2.y) + (d1.z * d2.z);
 		double eq1mCoeff = (-(Math.pow(d1.x, 2)) - (Math.pow(d1.y, 2)) - (Math.pow(d1.z, 2)));
 		double eq1Const = ((d1.x * p3.x) - (d1.x * p1.x) + (d1.y * p3.y) - (d1.y * p1.y) + (d1.z * p3.z) - (d1.z * p1.z));
@@ -114,13 +113,10 @@ public class MathUtils
 		}
 		double n = M[0][2];
 		double m = M[1][2];
-		Vec3d i1 = new Vec3d(p1.x + (m * d1.x), p1.y + (m * d1.y), p1.z + (m * d1.z));
-		Vec3d i2 = new Vec3d(p3.x + (n * d2.x), p3.y + (n * d2.y), p3.z + (n * d2.z));
-		Vec3d i1Clamped = clampPointToLine(i1, l1Start, l1End);
-		Vec3d i2Clamped = clampPointToLine(i2, l2Start, l2End);
-		double result = i1Clamped.subtract(i2Clamped).lengthVector();
-		//System.out.println("Solving min-distance line equation took " + ((System.nanoTime() - start) / 1000.0) + " micro seconds");
-		return result;
+		resultA.set(p1.x + (m * d1.x), p1.y + (m * d1.y), p1.z + (m * d1.z));
+		resultB.set(p3.x + (n * d2.x), p3.y + (n * d2.y), p3.z + (n * d2.z));
+		clampPointToLine(resultA, l1Start, l1End);
+		clampPointToLine(resultB, l2Start, l2End);
+		return Vector3f.distsnace(resultA, resultB);
 	}
-
 }

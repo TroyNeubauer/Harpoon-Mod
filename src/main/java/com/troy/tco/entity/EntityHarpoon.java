@@ -5,6 +5,7 @@ import com.google.common.base.Predicates;
 import com.troy.tco.api.IJoinable;
 import com.troy.tco.init.Items;
 import com.troy.tco.item.ItemHarpoon;
+import com.troy.tco.util.Vector3f;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.block.Block;
 import net.minecraft.block.material.Material;
@@ -61,6 +62,7 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 	public EntityLivingBase shootingEntity;
 	private int ticksInGround;
 	private int ticksInAir;
+	private Vector3f myVecPos = new Vector3f();
 
 	public EntityHarpoon(World worldIn)
 	{
@@ -434,9 +436,10 @@ public class EntityHarpoon extends Entity implements IProjectile, IEntityAdditio
 	}
 
 	@Override
-	public Vec3d getPos()
+	public Vector3f getPos()
 	{
-		return getPositionVector();
+		myVecPos.set(this.posX, this.posY, this.posZ);
+		return myVecPos;
 	}
 
 	@Override

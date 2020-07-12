@@ -116,10 +116,6 @@ public class ItemHarpoonGun extends ItemBase {
 				stack.damageItem(1, player);
 				removeItemStackData(stack);
 
-				logger.info("Test distance " + MathUtils.distBetweenLines(
-						new Vec3d(10, 0, 0), new Vec3d(-10, 0, 0),
-						new Vec3d(0, 2, -10), new Vec3d(0, 1, -2))
-				);
 			}
 
 			world.playSound((EntityPlayer) null, player.posX, player.posY, player.posZ, SoundEvents.ENTITY_GENERIC_EXPLODE, SoundCategory.PLAYERS, 0.75f, 1.0f / (itemRand.nextFloat() * 0.4f + 2.0f) + 1.0f);

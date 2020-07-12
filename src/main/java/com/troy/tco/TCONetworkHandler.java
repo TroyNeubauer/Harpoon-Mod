@@ -1,6 +1,7 @@
 package com.troy.tco;
 
 import com.troy.tco.entity.EntityHarpoonWire;
+import com.troy.tco.util.Vector3f;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.EntityPlayer;
@@ -30,21 +31,34 @@ public class TCONetworkHandler extends SimpleNetworkWrapper
 		public WireInteractMessage(){}
 
 		private int wireID;
-		public WireInteractMessage(EntityHarpoonWire wire)
+		private float clickX;
+		private float clickY;
+		private float clickZ;
+
+		public WireInteractMessage(EntityHarpoonWire wire, Vector3f clickPos)
 		{
 			this.wireID = wire.getEntityId();
+			this.clickX = clickPos.x;
+			this.clickY = clickPos.y;
+			this.clickZ = clickPos.z;
 		}
 
 		@Override
 		public void toBytes(ByteBuf buf)
 		{
 			buf.writeInt(wireID);
+			buf.writeFloat(clickX);
+			buf.writeFloat(clickY);
+			buf.writeFloat(clickZ);
 		}
 
 		@Override
 		public void fromBytes(ByteBuf buf)
 		{
-			wireID = buf.readInt();
+			this.wireID = buf.readInt();
+			this.clickX = buf.readFloat();
+			this.clickY = buf.readFloat();
+			this.clickZ = buf.readFloat();
 		}
 	}
 
@@ -66,7 +80,7 @@ public class TCONetworkHandler extends SimpleNetworkWrapper
 				else
 				{
 					EntityHarpoonWire wire = ((EntityHarpoonWire) wireEntity);
-					wire.interact(sendingPlayer);
+					wire.interact(sendingPlayer, new Vector3f(message.clickX, message.clickY, message.clickZ));
 				}
 			});
 			// No response packet

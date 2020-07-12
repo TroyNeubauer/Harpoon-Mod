@@ -1,6 +1,7 @@
 package com.troy.tco.entity;
 
 import com.troy.tco.api.IJoinable;
+import com.troy.tco.util.Vector3f;
 import io.netty.buffer.ByteBuf;
 import net.minecraft.entity.Entity;
 import net.minecraft.init.Blocks;
@@ -10,11 +11,10 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
 
-import static com.troy.tco.TCO.logger;
-
 public class EntityFixedJoinable extends Entity implements IJoinable, IEntityAdditionalSpawnData
 {
 	private BlockPos tile;
+	private Vector3f myVecPos = new Vector3f();
 
 	public EntityFixedJoinable(World world)
 	{
@@ -32,9 +32,10 @@ public class EntityFixedJoinable extends Entity implements IJoinable, IEntityAdd
 	}
 
 	@Override
-	public Vec3d getPos()
+	public Vector3f getPos()
 	{
-		return getPositionVector();
+		myVecPos.set(this.posX, this.posY, this.posZ);
+		return myVecPos;
 	}
 
 	int ticks = 0;

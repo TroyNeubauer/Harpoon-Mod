@@ -2,20 +2,18 @@ package com.troy.tco.entity;
 
 import com.troy.tco.api.IJoinable;
 import com.troy.tco.util.EntityID;
+import com.troy.tco.util.MathUtils;
+import com.troy.tco.util.Vector3f;
 import io.netty.buffer.ByteBuf;
-import net.minecraft.client.renderer.Vector3d;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.EntityAnimal;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.item.ItemLead;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
-import net.minecraft.util.EnumHand;
 import net.minecraft.util.math.AxisAlignedBB;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraftforge.fml.common.registry.IEntityAdditionalSpawnData;
-import org.lwjgl.util.vector.Vector3f;
 
 import java.util.HashMap;
 import java.util.List;
@@ -74,7 +72,7 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 				return;
 			}
 		}
-		float distance = (float) start.getPos().subtract(end.getPos()).lengthVector();
+		float distance = (float) Vector3f.subtract(start.getPos(), end.getPos()).length();
 		double newX = (start.getPos().x + end.getPos().x) / 2.0;
 		double newY = (start.getPos().y + end.getPos().y) / 2.0;
 		double newZ = (start.getPos().z + end.getPos().z) / 2.0;
@@ -84,10 +82,9 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 			//this.setSize(distance, distance);
 			//this.setEntityBoundingBox(new AxisAlignedBB(start.getPos(), end.getPos()));
 		}
-
 	}
 
-	public boolean interact(EntityPlayer entityplayer) //interact : change back when Forge updates
+	public boolean interact(EntityPlayer entityplayer, Vector3f clickPosclickPos)
 	{
 		if(isDead)
 			return false;
@@ -113,6 +110,7 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 					if(animal.startRiding(this))
 					{
 						animal.clearLeashed(true, !entityplayer.capabilities.isCreativeMode);
+						animal.setPosition(clickPosclickPos.x, clickPosclickPos.y, clickPosclickPos.z);
 					}
 					else
 					{
@@ -123,29 +121,74 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 			return true;
 		}
 		// Put them in the seat
-		if(!entityplayer.startRiding(this))
+		if(entityplayer.startRiding(this))
+		{
+			entityplayer.setPosition(clickPosclickPos.x, clickPosclickPos.y, clickPosclickPos.z);
+		}
+		else
 		{
 			logger.warn("Failed to mount seat");
 		}
 		return true;
 	}
 
+	//Returns the component of vector onto direction, normalizing the vectors in the process
+	private static float getComponentInAxis(Vector3f vector, Vector3f direction)
+	{
+		return Vector3f.dot(vector, direction) / vector.length();
+	}
+
+	private static final Vector3f GRAVITY_AXIS = new Vector3f(0, 1, 0);
+
 	@Override
 	public void updatePassenger(Entity passenger)
 	{
 		if (isPassenger(passenger))
 		{
+			if (!isReady()) return;
+
 			logger.info("Updating " + passenger);
 			Vector3f velocity = velocities.get(passenger.getEntityId());
-			Vector3f force = new Vector3f();
-			force.y = 9.81f / 20.0f / 10.0f;
 
-			Vector3f.add(velocity, force, velocity);
-			passenger.posX += velocity.x;
-			passenger.posY += velocity.y;
-			passenger.posZ += velocity.z;
-			passenger.setPosition(passenger.posX, passenger.posY, passenger.posZ);
+			Vector3f start = getStart().getPos();
+			Vector3f end = getEnd().getPos();
+
+			Vector3f wireDelta = new Vector3f((float) (end.x - start.x), (float) (end.y - start.y), (float) (end.z - start.z));
+			Vector3f wireDirection = Vector3f.normalise(wireDelta);
+			logger.info("Wire direction is " + wireDirection);
+
+			Vector3f wireRight = Vector3f.cross(wireDirection, GRAVITY_AXIS);
+			logger.info("Wire right is " + wireRight);
+
+			Vector3f wireNormal = Vector3f.cross(wireDirection, wireRight.negate());
+			logger.info("Wire normal is " + wireNormal);
+
+			float gravity = 9.81f / 20.0f / 10.0f;
+			Vector3f normalForce = Vector3f.scale(wireNormal, gravity / getComponentInAxis(wireNormal, GRAVITY_AXIS));
+			logger.info("normal FORCE: " + normalForce + " gravity is " + gravity);
+
+			//Sum all forces
+			Vector3f force = new Vector3f();
+			force.add(normalForce);
+			force.subtract(Vector3f.scale(GRAVITY_AXIS, gravity));
+
+			velocity.add(force);
+			float length = velocity.length();
+			velocity.set(wireDelta);
+			velocity.setLength(length);
+
+			Vector3f pos = new Vector3f(passenger.posX, passenger.posY, passenger.posZ);
+			pos.add(velocity);
+
+			float distanceToStart = Vector3f.distsnace(start, pos);
+			float wireLength = Vector3f.distsnace(start, pos);
+			float doneRatio = Math.min(distanceToStart / wireLength, 1.0f);
+
+
+			MathUtils.clampPointToLine(pos, start, end);
+			passenger.setPosition(pos.x, pos.y, pos.z);
 			velocities.put(passenger.getEntityId(), velocity);
+
 		}
 	}
 
@@ -253,6 +296,11 @@ public class EntityHarpoonWire extends Entity implements IEntityAdditionalSpawnD
 	{
 		//Wires cannot ride other entities
 		return false;
+	}
+
+	private boolean isReady()
+	{
+		return start != null && end != null;
 	}
 
 	@Override

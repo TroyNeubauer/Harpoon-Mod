@@ -8,6 +8,7 @@ import com.troy.tco.init.Entities;
 import com.troy.tco.entity.EntityHarpoon;
 import com.troy.tco.init.Items;
 import com.troy.tco.util.MathUtils;
+import com.troy.tco.util.Vector3f;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.entity.EntityPlayerSP;
 import net.minecraft.entity.Entity;
@@ -20,6 +21,7 @@ import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.InputEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -57,11 +59,12 @@ public class EventSubscriber
 		proxy.registerRenderers();
 	}
 
+
 	@SideOnly(Side.CLIENT)
 	@SubscribeEvent
-	public static void onMouseInput(InputEvent.MouseInputEvent event)
+	public static void worldTick(TickEvent.ClientTickEvent event)
 	{
-		if (Minecraft.getMinecraft().gameSettings.keyBindUseItem.isPressed())
+		if (Minecraft.getMinecraft().gameSettings.keyBindUseItem.isKeyDown())
 		{
 			double regularClickDistance;
 			RayTraceResult mouseOver = Minecraft.getMinecraft().objectMouseOver;
@@ -77,10 +80,10 @@ public class EventSubscriber
 
 			EntityPlayerSP player = Minecraft.getMinecraft().player;
 			float partialTicks = Minecraft.getMinecraft().getRenderPartialTicks();
-			Vec3d playerPos = player.getPositionEyes(partialTicks);
-			Vec3d playerLook = player.getLook(partialTicks);
+			Vector3f playerPos = new Vector3f(player.getPositionEyes(partialTicks));
+			Vector3f playerLook = new Vector3f(player.getLook(partialTicks));
 			final float harpoonReachDistance = 5.0f;
-			Vec3d end = playerPos.addVector(playerLook.x * harpoonReachDistance, playerLook.y * harpoonReachDistance, playerLook.z * harpoonReachDistance);
+			Vector3f end = Vector3f.add(playerPos, playerLook.scale(harpoonReachDistance));
 			for (Entity entity : Minecraft.getMinecraft().world.getLoadedEntityList())
 			{
 				if (entity instanceof EntityHarpoonWire)
@@ -91,16 +94,16 @@ public class EventSubscriber
 						//The wire's entities are still loading
 						continue;
 					}
-					double distanceToWire = MathUtils.distBetweenLines(playerPos, end, wire.getStart().getPos(), wire.getEnd().getPos());
+					Vector3f a = new Vector3f(), b = new Vector3f();
+					double distanceToWire = MathUtils.distBetweenLines(playerPos, end, wire.getStart().getPos(), wire.getEnd().getPos(), a, b);
 					if (distanceToWire < regularClickDistance && distanceToWire < 1.0)
 					{
 						logger.info("Clicked line: " + distanceToWire);
-						TCO.networkHandler.sendToServer(new TCONetworkHandler.WireInteractMessage(wire));
+						TCO.networkHandler.sendToServer(new TCONetworkHandler.WireInteractMessage(wire, b));
 					}
 				}
 			}
 		}
-
 	}
 
 }
